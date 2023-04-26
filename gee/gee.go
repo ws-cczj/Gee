@@ -24,6 +24,8 @@ type Engine struct {
 
 	htmlTemplates *template.Template // 静态模板
 	funcMap       template.FuncMap
+
+	validator *Validator // 绑定校验
 }
 
 // ServeHTTP 实现Handler接口，底层进行HTTP服务解析。
@@ -82,6 +84,7 @@ func New() *Engine {
 	engine := &Engine{router: newRouter()}
 	engine.RouterGroup = &RouterGroup{engine: engine}
 	engine.groups = []*RouterGroup{engine.RouterGroup}
+	engine.validator = new(Validator)
 	return engine
 }
 

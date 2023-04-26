@@ -136,3 +136,11 @@ func (c *Context) Query(key string) string {
 func (c *Context) Param(key string) string {
 	return c.Params[key]
 }
+
+// ShouldBind 处理Form表单数据
+func (c *Context) ShouldBind(obj any) error {
+	if obj == nil {
+		return ErrNullData
+	}
+	return c.engine.validator.lazyInit().ShouldBindForm(obj, c.Req)
+}

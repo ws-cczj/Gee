@@ -19,12 +19,8 @@ func onlyForV2() HandlerFunc {
 }
 
 func TestWithMiddlewares(t *testing.T) {
-	r := NewGee(WithExitOp(true),
+	r := Default(WithExitOp(true),
 		WithMiddlewares(Logger(), Cors()))
-
-	r.GET("/", func(c *Context) {
-		c.HTML(http.StatusOK, "<h1>Hello Gee</h1>")
-	})
 
 	v2 := r.Group("/v2")
 	v2.Use(onlyForV2()) // v2 group middleware
