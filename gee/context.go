@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sync"
 )
 
 const abortLen = 1 << 10
@@ -23,6 +24,12 @@ type Context struct {
 
 	index    int           // 控制当前处理进度
 	handlers []HandlerFunc // 存储当前请求对应的 中间件 和 handler.
+
+	// This mutex protects Keys map.
+	mu sync.RWMutex
+
+	// Keys is a key/value pair exclusively for the context of each request.
+	Keys map[string]any
 
 	engine *Engine // 存储引擎
 }
@@ -135,6 +142,25 @@ func (c *Context) Query(key string) string {
 
 func (c *Context) Param(key string) string {
 	return c.Params[key]
+}
+
+// Set 通过上下文传递信息
+func (c *Context) Set(key string, val any) {
+	c.mu.Lock()
+	if c.Keys == nil {
+		c.Keys = map[string]any{}
+	}
+
+	c.Keys[key] = val
+	c.mu.Unlock()
+}
+
+// Get 通过上下文获取信息
+func (c *Context) Get(key string) (val any, exist bool) {
+	c.mu.RLock()
+	val, exist = c.Keys[key]
+	c.mu.RUnlock()
+	return
 }
 
 // ShouldBind 处理Form表单数据
