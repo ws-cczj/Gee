@@ -145,10 +145,10 @@ func (c *Context) Param(key string) string {
 }
 
 // Set 通过上下文传递信息
-func (c *Context) Set(key string, val interface{}) {
+func (c *Context) Set(key string, val any) {
 	c.mu.Lock()
 	if c.Keys == nil {
-		c.Keys = map[string]interface{}{}
+		c.Keys = map[string]any{}
 	}
 
 	c.Keys[key] = val
@@ -156,7 +156,7 @@ func (c *Context) Set(key string, val interface{}) {
 }
 
 // Get 通过上下文获取信息
-func (c *Context) Get(key string) (val interface{}, exist bool) {
+func (c *Context) Get(key string) (val any, exist bool) {
 	c.mu.RLock()
 	val, exist = c.Keys[key]
 	c.mu.RUnlock()
@@ -164,7 +164,7 @@ func (c *Context) Get(key string) (val interface{}, exist bool) {
 }
 
 // ShouldBind 处理Form表单数据
-func (c *Context) ShouldBind(obj interface{}) error {
+func (c *Context) ShouldBind(obj any) error {
 	if obj == nil {
 		return ErrNullData
 	}
