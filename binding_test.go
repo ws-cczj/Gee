@@ -8,7 +8,12 @@ import (
 )
 
 func TestBind(t *testing.T) {
+	// 允许嵌套结构体
+	type Student struct {
+		Id int `form:"id"`
+	}
 	type User struct {
+		*Student
 		Name string `form:"name" binding:"required"`
 		Age  int    `form:"age"`
 	}
@@ -17,13 +22,14 @@ func TestBind(t *testing.T) {
 		c.String(http.StatusOK, "Hello Geektutu\n")
 	})
 	r.POST("/go", func(c *Context) {
-		u := &User{}
+		u := &User{Student: new(Student)}
 		if err := c.ShouldBind(u); err != nil {
 			_, ok := err.(validator.ValidationErrors)
 			fmt.Println(ok)
 			fmt.Println(err)
 		}
 		fmt.Println(u)
+		fmt.Println(u.Student)
 	})
 	r.PUT("/go", func(c *Context) {
 		u := &User{}

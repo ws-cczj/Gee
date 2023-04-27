@@ -7,6 +7,7 @@ import (
 	"strconv"
 )
 
+// Bind 通过反射来绑定参数
 func Bind(req *http.Request, obj interface{}) error {
 	// 获取结构体类型和值
 	objType := reflect.TypeOf(obj).Elem()
@@ -17,20 +18,35 @@ func Bind(req *http.Request, obj interface{}) error {
 		field := objType.Field(i)
 		tag := field.Tag.Get("form")
 
-		// 如果tag为空或者 '-'，则跳过该字段
-		if tag == "-" || tag == "" {
-			continue
-		}
-
-		// 从req.Form中获取参数值 如果获取不到就跳过
-		values, ok := req.Form[tag]
-		if !ok {
+		// 如果tag为 '-' 或者 该字段为私有字段，则跳过该字段
+		if tag == "-" || !field.IsExported() {
 			continue
 		}
 
 		// 将参数值转换为字段类型
 		fieldType := field.Type
 		fieldValue := objValue.Field(i)
+		// 从req.Form中获取参数值 如果获取不到就跳过
+		values, ok := req.Form[tag]
+		if !ok {
+			// 处理嵌套结构体 使用一个新的结构体来进入递归。
+			// 将新结构体中的字段 赋值 给旧结构体。
+			if fieldType.Kind() == reflect.Struct {
+				nestedObj := reflect.New(fieldType).Interface()
+				if err := Bind(req, nestedObj); err != nil {
+					return err
+				}
+				objValue.Field(i).Set(reflect.ValueOf(nestedObj).Elem())
+			} else if fieldType.Kind() == reflect.Ptr && fieldType.Elem().Kind() == reflect.Struct {
+				nestedObj := reflect.New(fieldType.Elem()).Interface()
+				if err := Bind(req, nestedObj); err != nil {
+					return err
+				}
+				objValue.Field(i).Set(reflect.ValueOf(nestedObj).Elem().Addr())
+			}
+			continue
+		}
+
 		if fieldType.Kind() == reflect.Slice {
 			// 如果字段是切片类型，则需要特殊处理
 			sliceType := fieldType.Elem()
@@ -45,15 +61,13 @@ func Bind(req *http.Request, obj interface{}) error {
 			fieldValue.Set(slice)
 		} else {
 			// 否则直接转换为字段类型
-			value := values[0]
-			rftVal, err := convertValue(value, fieldType)
+			rftVal, err := convertValue(values[0], fieldType)
 			if err != nil {
 				return fmt.Errorf("invalid form parameter: %s", tag)
 			}
 			fieldValue.Set(rftVal)
 		}
 	}
-
 	return nil
 }
 
