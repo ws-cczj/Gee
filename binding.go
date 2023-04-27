@@ -1,4 +1,4 @@
-package Gee
+package gee
 
 import (
 	"errors"
