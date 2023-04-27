@@ -168,9 +168,5 @@ func (c *Context) ShouldBind(obj any) error {
 	if obj == nil {
 		return ErrNullData
 	}
-	return c.Validator().ShouldBindForm(obj, c.Req)
-}
-
-func (c *Context) Validator() *Validator {
-	return c.engine.validator.lazyInit()
+	return c.engine.Validator().ShouldBindForm(obj, c.Req)
 }

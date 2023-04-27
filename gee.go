@@ -79,6 +79,11 @@ func (engine *Engine) LoadHTMLGlob(pattern string) {
 	engine.htmlTemplates = template.Must(template.New("").Funcs(engine.funcMap).ParseGlob(pattern))
 }
 
+// Validator 返回校验器
+func (engine *Engine) Validator() *Validator {
+	return engine.validator.lazyInit()
+}
+
 // New 默认配置
 func New() *Engine {
 	engine := &Engine{router: newRouter()}
