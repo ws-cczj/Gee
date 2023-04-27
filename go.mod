@@ -1,4 +1,4 @@
-module gee
+module Gee
 
 go 1.19
 
