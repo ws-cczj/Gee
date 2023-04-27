@@ -1,4 +1,4 @@
-module Gee
+module github.com/ws-cczj/gee
 
 go 1.19
 
