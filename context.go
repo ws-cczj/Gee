@@ -3,7 +3,7 @@ package gee
 import (
 	"encoding/json"
 	"fmt"
-	"gee/binding"
+	"github.com/ws-cczj/gee/binding"
 	"net/http"
 	"os"
 	"sync"
