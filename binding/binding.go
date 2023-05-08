@@ -10,6 +10,8 @@ import (
 	"sync"
 )
 
+const JSON = "application/json"
+
 var ErrNullData = errors.New("obj data cant nil")
 
 // Binding describes the interface which needs to be implemented for binding the
@@ -28,7 +30,7 @@ func Default(method, contentType string) Binding {
 	}
 
 	switch contentType {
-	case "json":
+	case JSON:
 		return jsonBinding{}
 	default: // case MIMEPOSTForm:
 		return formBinding{}
