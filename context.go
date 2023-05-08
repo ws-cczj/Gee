@@ -3,6 +3,7 @@ package gee
 import (
 	"encoding/json"
 	"fmt"
+	"gee/binding"
 	"net/http"
 	"os"
 	"sync"
@@ -84,6 +85,13 @@ func (c *Context) Header(key, val string) {
 	c.Writer.Header().Set(key, val)
 }
 
+func (c *Context) GetHeader(key string) string {
+	if key == "" {
+		return ""
+	}
+	return c.Req.Header.Get(key)
+}
+
 // Status 修改状态码
 func (c *Context) Status(code int) {
 	if c.StatusCode > 0 && c.StatusCode != code {
@@ -163,10 +171,11 @@ func (c *Context) Get(key string) (val any, exist bool) {
 	return
 }
 
-// ShouldBind 处理Form表单数据
+// ShouldBind 处理Form和Json数据
 func (c *Context) ShouldBind(obj any) error {
 	if obj == nil {
-		return ErrNullData
+		return binding.ErrNullData
 	}
-	return c.engine.Validator().ShouldBindForm(obj, c.Req)
+	b := binding.Default(c.Method, c.GetHeader("Content-Type"))
+	return b.Bind(c.Req, obj)
 }

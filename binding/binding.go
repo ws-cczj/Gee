@@ -1,4 +1,4 @@
-package gee
+package binding
 
 import (
 	"errors"
@@ -11,6 +11,40 @@ import (
 )
 
 var ErrNullData = errors.New("obj data cant nil")
+
+// Binding describes the interface which needs to be implemented for binding the
+// data present in the request such as JSON request body, query parameters or
+// the form POST.
+type Binding interface {
+	Name() string
+	Bind(*http.Request, any) error
+}
+
+// Default returns the appropriate Binding instance based on the HTTP method
+// and the content type.
+func Default(method, contentType string) Binding {
+	if method == http.MethodGet {
+		return formBinding{}
+	}
+
+	switch contentType {
+	case "json":
+		return jsonBinding{}
+	default: // case MIMEPOSTForm:
+		return formBinding{}
+	}
+}
+
+type Validator struct {
+	*validator.Validate
+}
+
+func validate(obj any) error {
+	if validatorTol == nil {
+		return nil
+	}
+	return validatorTol.lazyInit().validate(obj)
+}
 
 const defaultMemory = 32 << 20
 
@@ -39,24 +73,8 @@ func (err SliceValidationError) Error() string {
 	}
 }
 
-type Validator struct {
-	*validator.Validate
-}
-
-func (v *Validator) ShouldBindForm(obj any, req *http.Request) error {
-	if err := req.ParseForm(); err != nil {
-		return err
-	}
-	if err := req.ParseMultipartForm(defaultMemory); err != nil && !errors.Is(err, http.ErrNotMultipart) {
-		return err
-	}
-	if err := Bind(req, obj); err != nil {
-		return err
-	}
-	return v.validate(obj)
-}
-
-// ValidateStruct receives any kind of type, but only performed struct or pointer to struct type.
+// ValidateStruct receives any kind of type,
+// but only performed struct or pointer to struct type.
 func (v *Validator) validate(obj any) error {
 	value := reflect.ValueOf(obj)
 	switch value.Kind() {
@@ -82,10 +100,20 @@ func (v *Validator) validate(obj any) error {
 }
 
 // 懒汉式单例
-var validate sync.Once
+var validateOnce sync.Once
+var validatorTol *Validator
 
+// ValidatorTol 只允许调用，不允许修改
+func ValidatorTol() *Validator {
+	if validatorTol == nil {
+		validatorTol = new(Validator)
+	}
+	return validatorTol.lazyInit()
+}
+
+// LazyInit 懒加载
 func (v *Validator) lazyInit() *Validator {
-	validate.Do(func() {
+	validateOnce.Do(func() {
 		v.Validate = validator.New()
 		v.setTagName()
 	})
